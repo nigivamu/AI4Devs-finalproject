@@ -13,106 +13,157 @@
 
 ## 0. Ficha del proyecto
 
+El objetivo del presente proyecto es por medio del uso de herramientas de Inteligencia Artificial Generativa implementar un proceso de ingeniería de software con el uso de las mismas.
+
 ### **0.1. Tu nombre completo:**
+
+Nilson Giovanny Valdés Muñoz
 
 ### **0.2. Nombre del proyecto:**
 
+Gestor de Gastos Personal (GGP)
+
 ### **0.3. Descripción breve del proyecto:**
+
+Las personas no registran sus gastos porque el proceso suele resultar tedioso, rígido y requiere disciplina constante. El proyecto pretende desarrollar una aplicación web que permita reducir la fricción y mejorar la comprensión financiera con mínima interacción del usuario.
+Para ello se pretende que el usuario no solo use la interfaz gráfica de la aplicación sino que pueda usar herramientas como un chatbot para agilizar el registro de los gastos.
 
 ### **0.4. URL del proyecto:**
 
-> Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
+https://github.com/nigivamu/AI4Devs-finalproject
 
 ### 0.5. URL o archivo comprimido del repositorio
 
-> Puedes tenerlo alojado en público o en privado, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/). También puedes compartir por correo un archivo zip con el contenido
+https://github.com/nigivamu/AI4Devs-finalproject
 
 
 ---
 
 ## 1. Descripción general del producto
 
-> Describe en detalle los siguientes aspectos del producto:
-
 ### **1.1. Objetivo:**
 
-> Propósito del producto. Qué valor aporta, qué soluciona, y para quién.
+Demostrar cómo un desarrollador puede utilizar IA generativa como copiloto integral a lo largo del ciclo de vida del software. Desde la ideación hasta la validación, mediante la construcción de un MVP funcional de seguimiento de gastos personales con interacción en lenguaje natural.
+
+Para ello se ha escogido desarrollar un Software para Gestión de Gastos Personales que permita:
+
+* **Reducir el esfuerzo y la disciplina** requerida para registrar gastos de forma consistente.
+* Brindar control **básico** y percepción temprana de exceso de gasto.
+* Mantener simplicidad técnica y foco en el valor principal.
+* Permitir decisiones rápidas sin interpretación técnica de datos.
 
 ### **1.2. Características y funcionalidades principales:**
 
-> Enumera y describe las características y funcionalidades específicas que tiene el producto para satisfacer las necesidades identificadas.
+El producto:
+* Introduce un mecanismo explícito de auto–limitación (tope mensual) que permita al usuario tomar conciencia de sus hábitos de gasto sin análisis financiero avanzado. 
+* Comunica eventos relevantes (exceso de tope) en lenguaje natural, evitando métricas abstractas o dashboards complejos. 
+* Permite al usuario interactuar con el sistema usando lenguaje natural para registrar información financiera, eliminando formularios complejos y reduciendo fricción cognitiva.
+* Gestiona datos únicamente del usuario autenticado, sin funcionalidades sociales ni multiusuario.
 
 ### **1.3. Diseño y experiencia de usuario:**
 
-> Proporciona imágenes y/o videotutorial mostrando la experiencia del usuario desde que aterriza en la aplicación, pasando por todas las funcionalidades principales.
+Por avanzar en la fase 3
 
 ### **1.4. Instrucciones de instalación:**
-> Documenta de manera precisa las instrucciones para instalar y poner en marcha el proyecto en local (librerías, backend, frontend, servidor, base de datos, migraciones y semillas de datos, etc.)
 
+Por avanzar en la fase 3
 ---
 
 ## 2. Arquitectura del Sistema
 
 ### **2.1. Diagrama de arquitectura:**
-> Usa el formato que consideres más adecuado para representar los componentes principales de la aplicación y las tecnologías utilizadas. Explica si sigue algún patrón predefinido, justifica por qué se ha elegido esta arquitectura, y destaca los beneficios principales que aportan al proyecto y justifican su uso, así como sacrificios o déficits que implica.
-
 
 ### **2.2. Descripción de componentes principales:**
 
-> Describe los componentes más importantes, incluyendo la tecnología utilizada
-
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
-
-> Representa la estructura del proyecto y explica brevemente el propósito de las carpetas principales, así como si obedece a algún patrón o arquitectura específica.
 
 ### **2.4. Infraestructura y despliegue**
 
-> Detalla la infraestructura del proyecto, incluyendo un diagrama en el formato que creas conveniente, y explica el proceso de despliegue que se sigue
+Por avanzar en la fase 2
 
 ### **2.5. Seguridad**
 
-> Enumera y describe las prácticas de seguridad principales que se han implementado en el proyecto, añadiendo ejemplos si procede
+Por avanzar en la fase 2
 
 ### **2.6. Tests**
 
-> Describe brevemente algunos de los tests realizados
+Por avanzar en la fase 2
 
 ---
 
 ## 3. Modelo de Datos
 
 ### **3.1. Diagrama del modelo de datos:**
+```mermaid
+erDiagram
 
-> Recomendamos usar mermaid para el modelo de datos, y utilizar todos los parámetros que permite la sintaxis para dar el máximo detalle, por ejemplo las claves primarias y foráneas.
+    USER {
+        uuid id PK
+        string email
+        string password_hash
+        timestamp created_at
+    }
 
+    MONTHLY_LIMIT {
+        uuid id PK
+        uuid user_id FK
+        string month
+        decimal amount
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    EXPENSE {
+        uuid id PK
+        uuid user_id FK
+        decimal amount
+        string category
+        string description
+        date expense_date
+        timestamp created_at
+    }
+
+    USER ||--o{ EXPENSE : "registra"
+    USER ||--o{ MONTHLY_LIMIT : "define"
+```
 
 ### **3.2. Descripción de entidades principales:**
 
-> Recuerda incluir el máximo detalle de cada entidad, como el nombre y tipo de cada atributo, descripción breve si procede, claves primarias y foráneas, relaciones y tipo de relación, restricciones (unique, not null…), etc.
+[Definiciones del modelo](02modelodatos.md#seccion-2)
 
 ---
 
 ## 4. Especificación de la API
 
-> Si tu backend se comunica a través de API, describe los endpoints principales (máximo 3) en formato OpenAPI. Opcionalmente puedes añadir un ejemplo de petición y de respuesta para mayor claridad
-
+Por avanzar en la fase 2
 ---
 
 ## 5. Historias de Usuario
 
-> Documenta 3 de las historias de usuario principales utilizadas durante el desarrollo, teniendo en cuenta las buenas prácticas de producto al respecto.
+### Flujo E2E seleccionado
+** Registro → Login → Definir tope mensual → Registrar gasto → Alerta por excedente **
+- Tiene inicio claro (usuario nuevo)
+- Tiene decisión explícita (tope)
+- Tiene acción repetible (registro de gasto)
+- Tiene resultado observable (alerta)
+- Permite uso de IA fuera y dentro del código
+- Se puede probar extremo a extremo en minutos
 
 **Historia de Usuario 1**
+Como usuario nuevo, quiero crear una cuenta con mis credenciales básicas, para poder acceder de forma segura a mi información de gastos personales.
 
 **Historia de Usuario 2**
+Como usuario autenticado, quiero definir un tope mensual de gasto, para tener una referencia clara de cuánto puedo gastar durante el mes.
 
 **Historia de Usuario 3**
+Como usuario autenticado, quiero registrar un gasto escribiéndolo en lenguaje natural, para evitar formularios complejos y reducir el esfuerzo al llevar el control de mis gastos.
+
+**Historia de Usuario 4**
+Como usuario que controla sus gastos, quiero recibir una alerta clara cuando supere mi tope mensual, para ser consciente inmediatamente de que he excedido mi límite.
 
 ---
 
 ## 6. Tickets de Trabajo
-
-> Documenta 3 de los tickets de trabajo principales del desarrollo, uno de backend, uno de frontend, y uno de bases de datos. Da todo el detalle requerido para desarrollar la tarea de inicio a fin teniendo en cuenta las buenas prácticas al respecto. 
 
 **Ticket 1**
 
