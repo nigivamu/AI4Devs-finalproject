@@ -162,6 +162,37 @@ Dadas las historias de usuario, pririza y define: criterios de aceptación, crit
 ---
 
 ### 6. Tickets de Trabajo
+```
+#Rol:
+Eres un experto Administrador de proyectos con 15 años de experiencia dividiendo historias de usuario en tareas para ser trabajadas por los equipos de desarrollo tanto de backe end como front end. Utilizar tu experiencia para dividir las tareas te tal suerte que cumplan con los criterios INVEST de Bil Wake.
+#Contexto:
+Se ha definido las historias para la implementación de la solución Gestor de Gastos Personal en <<ARCHIVO>> y se requiere de tu experiencia y conocimiento para generar las tareas para dichas historias y ser entregadas al equipo de desarrollo.
+#Instrucciones:
+Genera las historias necesarias para que cada una de las historias de usuario registradas se cumplan y al finalizar puedan ser probadas y funcionales.
+#Estilo:
+**Título:**
+**Descripción:**
+**Criterios de Aceptación:**
+**Prioridad:**
+**Etiquetas:** 
+**Comentarios:** 
+**Enlaces:** 
+**Historial de Cambios:**
+#Ejemplo:
+**Título:** Implementación de Autenticación de Dos Factores (2FA)
+**Descripción:** Añadir autenticación de dos factores para mejorar la seguridad del login de usuarios. Debe soportar aplicaciones de autenticación como Authenticator y mensajes SMS.
+**Criterios de Aceptación:**
+- Los usuarios pueden seleccionar 2FA desde su perfil.
+- Soporte para Google Authenticator y SMS.
+- Los usuarios deben confirmar el dispositivo 2FA durante la configuración.
+**Prioridad:** Alta
+**Etiquetas:** Seguridad, Backend, Sprint 10
+**Comentarios:** Verificar la compatibilidad con la base de usuarios internacionales para el envío de SMS.
+**Enlaces:** Documento de Especificación de Requerimientos de Seguridad
+**Historial de Cambios:**
+- 01/10/2023: Creado por [nombre]
+- 05/10/2023: Prioridad actualizada a Alta por [nombre]
+```
 
 **Prompt 1:**
 
