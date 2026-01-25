@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import mockApi from '../services/mockApi';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         // Check if user is already logged in
-        const currentUser = mockApi.getCurrentUser();
+        const currentUser = api.getCurrentUser();
         if (currentUser) {
             setUser(currentUser);
         }
@@ -20,8 +20,8 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await mockApi.login(email, password);
-            setUser(mockApi.getCurrentUser());
+            const response = await api.login(email, password);
+            setUser(api.getCurrentUser());
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (email, password) => {
         try {
-            const response = await mockApi.register(email, password);
+            const response = await api.register(email, password);
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-        await mockApi.logout();
+        await api.logout();
         setUser(null);
         navigate('/login');
     };

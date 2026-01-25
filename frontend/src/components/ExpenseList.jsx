@@ -1,4 +1,4 @@
-import mockApi from '../services/mockApi';
+import api from '../services/api';
 import { Calendar } from 'lucide-react';
 
 const ExpenseList = ({ expenses }) => {
@@ -63,7 +63,7 @@ const ExpenseList = ({ expenses }) => {
                             </div>
                         </div>
                         <div className="font-bold text-gray-900">
-                            {mockApi.formatCurrency(expense.amount)}
+                            {api.formatCurrency(expense.amount)}
                         </div>
                     </div>
                 ))}

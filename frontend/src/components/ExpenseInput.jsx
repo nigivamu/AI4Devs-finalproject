@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import mockApi from '../services/mockApi';
+import api from '../services/api';
 import { Send, Sparkles } from 'lucide-react';
 
 const ExpenseInput = ({ onExpenseAdded }) => {
@@ -15,7 +15,7 @@ const ExpenseInput = ({ onExpenseAdded }) => {
         setLoading(true);
 
         try {
-            const result = await mockApi.addExpense(text);
+            const result = await api.addExpense(text);
             setText('');
             setSuccess('Gasto guardado');
             if (onExpenseAdded) {

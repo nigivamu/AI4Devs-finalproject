@@ -1,7 +1,8 @@
 from datetime import date, datetime
 from typing import Optional
 from decimal import Decimal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from app.schemas.utils import to_camel
 
 # Input payload
 class ExpenseInput(BaseModel):
@@ -13,6 +14,8 @@ class ExpenseCreate(BaseModel):
     category: Optional[str] = "Uncategorized"
     description: Optional[str] = None
     expense_date: date
+    
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 # Output Schema
 class Expense(ExpenseCreate):
@@ -20,8 +23,7 @@ class Expense(ExpenseCreate):
     user_id: int
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, alias_generator=to_camel, populate_by_name=True)
 
 # Dashboard Schema (including Alert)
 class Alert(BaseModel):
@@ -32,3 +34,6 @@ class DashboardResponse(BaseModel):
     total_spent: float
     expenses: list[Expense]
     alert: Optional[Alert] = None
+    
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+

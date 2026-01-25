@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import mockApi from '../services/mockApi';
+import api from '../services/api';
 import { Wallet, TrendingUp, PiggyBank, AlertCircle, PlusCircle } from 'lucide-react';
 
 import MonthlyLimit from './MonthlyLimit';
@@ -23,7 +23,7 @@ const DashboardView = () => {
 
     const loadDashboard = async () => {
         try {
-            const data = await mockApi.getDashboard();
+            const data = await api.getDashboard();
             setDashboardData(data);
         } catch (error) {
             console.error('Error loading dashboard:', error);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import mockApi from '../services/mockApi';
+import api from '../services/api';
 import { Target, Edit2, Check, X } from 'lucide-react';
 
 const MonthlyLimit = ({ currentLimit, onLimitSet }) => {
@@ -21,7 +21,7 @@ const MonthlyLimit = ({ currentLimit, onLimitSet }) => {
             const numAmount = parseFloat(amount);
             if (!numAmount || numAmount <= 0) return;
 
-            await mockApi.setMonthlyLimit(numAmount);
+            await api.setMonthlyLimit(numAmount);
             setIsEditing(false);
             if (onLimitSet) {
                 onLimitSet(numAmount);
@@ -40,7 +40,7 @@ const MonthlyLimit = ({ currentLimit, onLimitSet }) => {
                     <div>
                         <h3 className="text-gray-500 text-sm font-medium mb-1">Tope Mensual</h3>
                         <p className="text-xl font-bold text-gray-900">
-                            {currentLimit ? mockApi.formatCurrency(currentLimit) : 'No definido'}
+                            {currentLimit ? api.formatCurrency(currentLimit) : 'No definido'}
                         </p>
                     </div>
                     <button
