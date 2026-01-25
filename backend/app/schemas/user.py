@@ -25,7 +25,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True)
 
 class TokenData(BaseModel):
     email: Optional[str] = None

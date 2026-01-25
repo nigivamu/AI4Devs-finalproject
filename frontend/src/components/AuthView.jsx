@@ -24,7 +24,7 @@ const AuthView = () => {
         setLoading(false);
 
         if (result.success) {
-            navigate('/dashboard');
+            // navigate('/dashboard'); // Let PublicRoute or useEffect handle redirection based on state
         } else {
             setError(result.error);
         }
