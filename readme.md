@@ -66,7 +66,17 @@ Por avanzar en la fase 3
 
 ### **1.4. Instrucciones de instalación:**
 
-Por avanzar en la fase 3
+**Backend (Python/FastAPI):**
+1. Navega a la carpeta `backend/`.
+2. Sigue las instrucciones detalladas en [backend/README.md](backend/README.md).
+3. Resumen rápido:
+   ```bash
+   cd backend
+   python3 -m venv venv && source venv/bin/activate
+   pip install -r requirements.txt
+   uvicorn main:app --reload
+   ```
+
 ---
 
 ## 2. Arquitectura del Sistema

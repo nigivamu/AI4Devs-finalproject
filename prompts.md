@@ -209,3 +209,9 @@ Genera las historias necesarias para que cada una de las historias de usuario re
 **Prompt 2:**
 
 **Prompt 3:**
+
+
+===
+Implementación / gemini pro
+
+basado en la documentación que se encuentra en @docs haz el análisis correspondiente y el desglose de tareas requeridas para implementar el backend para la aplicación.  Para facilitar la implementación el backend se desea desarrollar en python.  Utiliza las mejores prácticas para el desarrollo en python. El desarrollo deberá quedar en la carpeta @backend

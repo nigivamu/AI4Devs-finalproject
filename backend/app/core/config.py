@@ -1,0 +1,17 @@
+from typing import List, Union
+from pydantic import AnyHttpUrl
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    PROJECT_NAME: str = "Expense Tracker MVP"
+    API_V1_STR: str = "/api/v1"
+    SECRET_KEY: str = "changethis_secret_key_in_production"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8 # 8 days
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+
+    # AI
+    OPENAI_API_KEY: str = ""
+
+    model_config = SettingsConfigDict(env_file=".env")
+
+settings = Settings()
