@@ -29,3 +29,8 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.get("/")
 def root():
     return {"message": "Welcome to Personal Expense Tracker API. Visit /docs for Swagger UI."}
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Docker health checks"""
+    return {"status": "healthy", "service": "expense-tracker-backend"}
