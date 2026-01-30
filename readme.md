@@ -291,15 +291,370 @@ AI4Devs-finalproject/
 
 ### **2.4. Infraestructura y despliegue**
 
-Por avanzar en la fase 2
+El proyecto utiliza contenedores Docker para el despliegue de la aplicación, permitiendo una separación clara entre los servicios de backend y frontend.
+
+#### Arquitectura de Despliegue
+
+```mermaid
+flowchart TB
+    subgraph "Docker Network"
+        NGINX[Nginx Reverse Proxy]
+        FE[Frontend Container<br/>React + Nginx]
+        BE[Backend Container<br/>FastAPI]
+        DB[(SQLite Database)]
+    end
+    
+    USER[Usuario]
+    
+    USER -->|HTTPS:443| NGINX
+    NGINX -->|Static Assets| FE
+    NGINX -->|/api/*| BE
+    BE --> DB
+```
+
+#### Servicios Docker
+
+**Backend Service**
+- **Imagen Base**: Python 3.13-slim
+- **Puerto**: 8000
+- **Comando**: `uvicorn main:app --host 0.0.0.0 --port 8000`
+- **Health Check**: HTTP endpoint `/health` cada 30 segundos
+- **Volúmenes**:
+  - `backend_data`: Directorio de datos
+  - `sql_app.db`: Base de datos SQLite persistente
+- **Usuario**: Non-root user `app` para seguridad
+
+**Frontend Service (Desarrollo)**
+- **Imagen Base**: node:22-alpine
+- **Puerto**: 3000
+- **Comando**: `npm install && npm run dev`
+- **Health Check**: HTTP endpoint `/` cada 30 segundos
+- **Volúmenes**: Montaje del código fuente para hot-reload
+
+**Frontend Service (Producción)**
+- **Build Stage**: node:18-alpine (multi-stage build)
+- **Runtime**: nginx:alpine
+- **Puerto**: 80
+- **Comando**: `nginx -g daemon off`
+- **Health Check**: HTTP endpoint `/` cada 30 segundos
+- **Recursos**: Límite de 128MB RAM, 0.25 CPU
+
+**Nginx Reverse Proxy (Producción)**
+- **Imagen Base**: nginx:alpine
+- **Puertos**: 80 (HTTP), 443 (HTTPS)
+- **Funciones**:
+  - Terminación SSL/TLS
+  - Proxy de API a backend
+  - Servir assets estáticos con cache
+  - Compresión Gzip
+  - Headers de seguridad
+
+#### Configuración de Entorno
+
+**Variables de Entorno Requeridas** (`.env`):
+```bash
+# Backend
+DATABASE_URL=sqlite:///./sql_app.db
+SECRET_KEY=<clave-segura-aleatoria>
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=11520  # 8 días
+OPENAI_API_KEY=<api-key-openai>
+BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+PROJECT_NAME=Expense Tracker MVP
+API_V1_STR=/api/v1
+ENVIRONMENT=development|production
+DEBUG=true|false
+```
+
+#### Comandos de Despliegue
+
+**Desarrollo**:
+```bash
+cd deploy
+docker compose up --build
+```
+
+**Producción**:
+```bash
+cd deploy
+docker compose -f docker-compose.prod.yml up --build
+```
+
+**Gestión de Servicios**:
+```bash
+# Ver estado
+docker compose ps
+
+# Ver logs
+docker compose logs -f [service-name]
+
+# Detener servicios
+docker compose down
+
+# Reconstruir servicio específico
+docker compose up --build backend
+```
+
+#### Consideraciones de Producción
+
+1. **Base de Datos**: SQLite es adecuado para el MVP. Para producción considerar PostgreSQL o MySQL.
+2. **SSL/TLS**: Configurar certificados SSL válidos en `deploy/ssl/`
+3. **Secretos**: Cambiar `SECRET_KEY` por un valor seguro generado aleatoriamente
+4. **Monitoreo**: Implementar logs centralizados y métricas de aplicación
+5. **Backup**: Implementar estrategia de backup para la base de datos
+6. **Escalabilidad**: Considerar orquestador como Kubernetes para escalamiento horizontal
 
 ### **2.5. Seguridad**
 
-Por avanzar en la fase 2
+El proyecto implementa múltiples capas de seguridad para proteger la información de los usuarios y garantizar la integridad del sistema.
+
+#### Autenticación y Autorización
+
+**JWT (JSON Web Tokens)**
+- **Algoritmo**: HS256
+- **Tiempo de expiración**: 8 días (11520 minutos)
+- **Implementación**: [`backend/app/core/security.py`](backend/app/core/security.py:11)
+- **Flujo**:
+  1. Usuario se registra con email y contraseña
+  2. Contraseña se hashea usando Argon2 antes de almacenar
+  3. Login genera token JWT con email como subject
+  4. Token se envía en header `Authorization: Bearer <token>`
+  5. Cada endpoint protegido valida el token
+
+**OAuth2 Password Flow**
+- **Endpoint**: `/api/v1/auth/login/access-token`
+- **Implementación**: [`backend/app/api/deps.py`](backend/app/api/deps.py:13)
+- **Dependencia**: `get_current_user()` inyecta el usuario autenticado
+
+#### Hashing de Contraseñas
+
+**Argon2**
+- **Librería**: passlib con scheme argon2
+- **Implementación**: [`backend/app/core/security.py`](backend/app/core/security.py:8)
+- **Funciones**:
+  - `get_password_hash(password)`: Genera hash de contraseña
+  - `verify_password(plain, hashed)`: Verifica contraseña
+
+**Razón de uso**: Argon2 fue seleccionado en lugar de bcrypt para evitar problemas de compatibilidad con Python 3.13.
+
+#### Protección de Endpoints
+
+**Middleware de Autenticación**
+- **Implementación**: [`backend/app/api/deps.py`](backend/app/api/deps.py:22)
+- **Validación**:
+  - Token JWT válido
+  - Token no expirado
+  - Usuario existe en base de datos
+
+**Endpoints Protegidos**:
+- `POST /api/v1/monthly-limit/` - Requiere token válido
+- `POST /api/v1/expenses` - Requiere token válido
+- `GET /api/v1/dashboard` - Requiere token válido
+
+**Endpoints Públicos**:
+- `POST /api/v1/auth/register` - Registro de usuarios
+- `POST /api/v1/auth/login/access-token` - Obtención de token
+
+#### Configuración de CORS
+
+**Orígenes Permitidos**
+- Configurado en `BACKEND_CORS_ORIGINS`
+- Por defecto: `http://localhost:3000` para desarrollo
+- Implementación: [`backend/app/core/config.py`](backend/app/core/config.py:10)
+
+#### Headers de Seguridad (Producción)
+
+**Nginx Configuration** ([`deploy/nginx.prod.conf`](deploy/nginx.prod.conf:30))
+```
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+```
+
+#### SSL/TLS
+
+**Configuración de Producción**
+- **Protocolos**: TLSv1.2, TLSv1.3
+- **Ciphers**: Suite de cifrado fuerte (ECDHE-RSA-AES256-GCM-SHA512)
+- **Implementación**: [`deploy/nginx.prod.conf`](deploy/nginx.prod.conf:22)
+- **Requisito**: Certificados SSL en `deploy/ssl/cert.pem` y `deploy/ssl/key.pem`
+
+#### Variables de Entorno Sensibles
+
+**Secretos Requeridos**:
+```bash
+SECRET_KEY=<clave-segura-aleatoria>  # Para firmar JWT
+OPENAI_API_KEY=<api-key-openai>      # Para servicio de IA
+```
+
+**Prácticas Recomendadas**:
+1. Nunca commitear `.env` al repositorio
+2. Usar valores generados aleatoriamente para producción
+3. Rotar secretos periódicamente
+4. Usar gestor de secretos en producción (Vault, AWS Secrets Manager)
+
+#### Seguridad en Contenedores
+
+**Non-root User**
+- Backend ejecuta como usuario `app` (no root)
+- Implementación: [`deploy/Dockerfile.backend`](deploy/Dockerfile.backend:26)
+
+**Network Isolation**
+- Servicios en red Docker bridge aislada
+- Solo puertos necesarios expuestos
+
+#### Validación de Datos
+
+**Pydantic Schemas**
+- Validación automática de entrada/salida
+- Implementación: [`backend/app/schemas/`](backend/app/schemas/)
+- Tipado fuerte previene inyección de datos
+
+#### Consideraciones de Seguridad Adicionales
+
+1. **Rate Limiting**: No implementado en MVP, recomendado para producción
+2. **Input Sanitization**: Validación vía Pydantic y prompts de IA controlados
+3. **SQL Injection**: Prevenido por ORM SQLAlchemy
+4. **XSS**: React sanitiza automáticamente el contenido renderizado
+5. **CSRF**: No implementado (API stateless con JWT)
+6. **Logging**: No se registran contraseñas ni datos sensibles en logs
 
 ### **2.6. Tests**
 
-Por avanzar en la fase 2
+El proyecto incluye pruebas de integración y pruebas E2E para validar el funcionamiento del sistema.
+
+#### Pruebas de Integración (Backend)
+
+**Script de Verificación del Backend**
+- **Archivo**: [`verify_backend.py`](verify_backend.py:1)
+- **Propósito**: Validar el flujo completo de la API backend
+- **Cobertura**:
+  1. Registro de usuario
+  2. Login y obtención de token JWT
+  3. Configuración de tope mensual
+  4. Registro de gasto (con fallback mock si no hay API key de OpenAI)
+  5. Consulta de dashboard
+
+**Ejecución**:
+```bash
+# Asegurarse de que el backend esté corriendo
+cd backend && uvicorn main:app --reload
+
+# En otra terminal
+python verify_backend.py
+```
+
+**Script de Verificación de Integración**
+- **Archivo**: [`verify_integration.py`](verify_integration.py:1)
+- **Propósito**: Validar la integración frontend-backend
+- **Validaciones Adicionales**:
+  - Verifica que las claves de respuesta estén en camelCase (esperado por frontend)
+  - Valida presencia de `totalSpent`, `monthlyLimit`, `expenseDate`
+  - Verifica estructura de respuesta del dashboard
+
+**Ejecución**:
+```bash
+python verify_integration.py
+```
+
+#### Pruebas E2E (Frontend)
+
+**Framework**: Playwright
+- **Configuración**: [`frontend/playwright.config.js`](frontend/playwright.config.js:1)
+- **Directorio**: [`frontend/tests/e2e/`](frontend/tests/e2e/)
+- **Browser**: Chromium (Desktop Chrome)
+- **Base URL**: `http://localhost:3000`
+- **Servidor de desarrollo**: Iniciado automáticamente por Playwright
+
+**Suite de Pruebas de Autenticación** ([`login.spec.js`](frontend/tests/e2e/login.spec.js:1))
+
+1. **Registro y Redirección al Dashboard**
+   - Genera email único con timestamp
+   - Completa formulario de registro
+   - Verifica redirección a `/dashboard`
+
+2. **Login con Usuario Existente**
+   - Registra un usuario primero
+   - Simula logout limpiando localStorage
+   - Realiza login
+   - Verifica redirección a `/dashboard`
+
+3. **Redirección de Rutas Protegidas**
+   - Intenta acceder a `/dashboard` sin autenticación
+   - Verifica redirección a `/login`
+
+**Suite de Pruebas del Dashboard** ([`dashboard.spec.js`](frontend/tests/e2e/dashboard.spec.js:1))
+
+1. **Configuración de Tope Mensual**
+   - Verifica estado inicial "No definido"
+   - Click en botón de edición
+   - Ingresa nuevo valor (500.000)
+   - Verifica actualización visual
+
+**Suite de Pruebas de Gastos** ([`expenses.spec.js`](frontend/tests/e2e/expenses.spec.js:1))
+
+1. **Registro de Gasto en Lenguaje Natural**
+   - Ingresa texto: "comrpe una pizza en 15"
+   - Envía formulario
+   - Verifica mensaje de éxito "Gasto guardado"
+   - Verifica aparición del gasto en la lista
+
+**Ejecución de Pruebas E2E**:
+```bash
+cd frontend
+
+# Instalar dependencias (primera vez)
+npm install
+
+# Ejecutar todas las pruebas
+npm run test:e2e
+
+# Ejecutar pruebas en modo headed (con ventana visible)
+npx playwright test --headed
+
+# Ejecutar pruebas específicas
+npx playwright test login.spec.js
+
+# Ver reporte HTML
+npx playwright show-report
+```
+
+#### Configuración de Playwright
+
+**Opciones de Configuración**:
+- `testDir`: `./tests/e2e`
+- `fullyParallel`: Ejecución paralela de pruebas
+- `retries`: 2 en CI, 0 en local
+- `workers`: 1 en CI, indefinido en local
+- `reporter`: HTML
+- `trace`: Activado en primer reintento
+- `webServer`: Inicia servidor de desarrollo automáticamente
+
+#### Cobertura de Pruebas
+
+| Tipo de Prueba | Archivo | Cobertura |
+|----------------|---------|-----------|
+| Integración Backend | `verify_backend.py` | Flujo completo API |
+| Integración Frontend-Backend | `verify_integration.py` | Validación de contratos |
+| E2E Autenticación | `login.spec.js` | Registro, Login, Rutas protegidas |
+| E2E Dashboard | `dashboard.spec.js` | Configuración de tope mensual |
+| E2E Gastos | `expenses.spec.js` | Registro de gastos en lenguaje natural |
+
+#### Limitaciones Actuales
+
+- No hay pruebas unitarias implementadas
+- No hay pruebas de carga/rendimiento
+- No hay pruebas de seguridad específicas
+- Las pruebas E2E dependen del backend corriendo localmente
+
+#### Próximos Pasos para Testing
+
+1. Implementar pruebas unitarias con pytest (backend)
+2. Implementar pruebas unitarias con Vitest/Jest (frontend)
+3. Agregar pruebas de carga con k6 o locust
+4. Implementar pruebas de seguridad con OWASP ZAP
+5. Integrar pruebas en pipeline CI/CD
 
 ---
 
@@ -341,7 +696,142 @@ erDiagram
 
 ### **3.2. Descripción de entidades principales:**
 
-[Definiciones del modelo](02modelodatos.md#seccion-2)
+Las entidades del modelo de datos están implementadas utilizando SQLAlchemy ORM y persistidas en SQLite.
+
+#### Entidad: User
+
+**Propósito**: Representa al usuario individual del sistema, permitiendo autenticación básica y asociación de gastos y topes.
+
+**Implementación**: [`backend/app/models/user.py`](backend/app/models/user.py:4)
+
+**Atributos**:
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto-increment, Indexed | Identificador único del usuario |
+| `email` | String(255) | Unique, Indexed, Not Null | Correo electrónico del usuario (usado como login) |
+| `hashed_password` | String | Not Null | Contraseña hasheada con Argon2 |
+| `is_active` | Boolean | Default: True | Estado de activación del usuario |
+
+**Notas de Implementación**:
+- El email se usa como identificador único para autenticación
+- No se almacena la contraseña en texto plano, solo el hash
+- El campo `is_active` permite desactivar usuarios sin eliminarlos
+
+---
+
+#### Entidad: MonthlyLimit
+
+**Propósito**: Representa el tope de gasto mensual definido por el usuario para controlar sus gastos.
+
+**Implementación**: [`backend/app/models/monthly_limit.py`](backend/app/models/monthly_limit.py:5)
+
+**Atributos**:
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto-increment, Indexed | Identificador único del tope |
+| `user_id` | Integer | FK → User.id, Not Null | Usuario propietario del tope |
+| `month` | String | Not Null | Mes en formato YYYY-MM |
+| `amount` | DECIMAL(10,2) | Not Null | Monto máximo permitido para el mes |
+| `created_at` | DateTime | Auto (server_default) | Fecha de creación del registro |
+| `updated_at` | DateTime | Auto (onupdate) | Fecha de última actualización |
+
+**Notas de Implementación**:
+- Un usuario puede tener múltiples registros de `MonthlyLimit` (uno por mes)
+- El campo `month` permite identificar el mes específico (ej: "2025-01")
+- El campo `updated_at` se actualiza automáticamente al modificar el tope
+
+---
+
+#### Entidad: Expense
+
+**Propósito**: Representa un gasto individual registrado por el usuario mediante lenguaje natural.
+
+**Implementación**: [`backend/app/models/expense.py`](backend/app/models/expense.py:5)
+
+**Atributos**:
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto-increment, Indexed | Identificador único del gasto |
+| `user_id` | Integer | FK → User.id, Not Null | Usuario que registró el gasto |
+| `amount` | DECIMAL(10,2) | Not Null | Monto del gasto |
+| `category` | String | Nullable | Categoría inferida por IA (ej: "Alimentación") |
+| `description` | Text | Nullable | Descripción del gasto inferida por IA |
+| `expense_date` | Date | Not Null | Fecha del gasto (inferida por IA) |
+| `created_at` | DateTime | Auto (server_default) | Fecha de registro en el sistema |
+
+**Notas de Implementación**:
+- Los campos `category`, `description` y `expense_date` son inferidos por el servicio de IA desde el texto en lenguaje natural
+- `expense_date` puede ser diferente de `created_at` (fecha de registro vs fecha del gasto)
+- El campo `amount` usa DECIMAL para precisión financiera
+
+---
+
+#### Relaciones entre Entidades
+
+```mermaid
+erDiagram
+    USER {
+        int id PK
+        string email UK
+        string hashed_password
+        boolean is_active
+    }
+
+    MONTHLY_LIMIT {
+        int id PK
+        int user_id FK
+        string month
+        decimal amount
+        datetime created_at
+        datetime updated_at
+    }
+
+    EXPENSE {
+        int id PK
+        int user_id FK
+        decimal amount
+        string category
+        text description
+        date expense_date
+        datetime created_at
+    }
+
+    USER ||--o{ EXPENSE : "registra"
+    USER ||--o{ MONTHLY_LIMIT : "define"
+```
+
+**Relaciones**:
+- **User → Expense**: Relación uno-a-muchos (1:N). Un usuario puede registrar múltiples gastos.
+- **User → MonthlyLimit**: Relación uno-a-muchos (1:N). Un usuario puede definir múltiples topes mensuales (uno por mes).
+
+---
+
+#### Entidades Derivadas (No Persistidas)
+
+**MonthlySpending**
+- **Descripción**: Entidad lógica calculada a partir de `Expense`
+- **Cálculo**: Suma de `amount` de todos los gastos del usuario para el mes actual
+- **Uso**: Comparación contra `MonthlyLimit` para generar alertas
+
+**Alert**
+- **Descripción**: Representa una alerta generada cuando se supera el tope mensual
+- **Características**: Generada dinámicamente, texto producido por IA, no persistida como historial
+- **Uso**: Informar al usuario de forma inmediata y comprensible
+
+---
+
+#### Entidades Excluidas Deliberadamente
+
+Para mantener el alcance del MVP, no se modelan las siguientes entidades:
+- Categoría como entidad independiente (se usa string)
+- Presupuesto por categoría
+- Historial de alertas
+- Sesiones persistidas (se usan JWT stateless)
+- Perfiles de usuario extendidos
+- Roles y permisos
 
 ---
 
@@ -607,6 +1097,26 @@ Los tickets de trabajo se derivan del desglose de tareas definido en [`docs/07 t
   - Scripts de verificación de backend e integración
   - Configuración de pruebas E2E con Playwright
 
-**Pull Request 3 - Pendiente**
-- **Nota**: Solo se encontraron 2 pull requests en el historial de git del proyecto. Para completar esta sección, se requiere información adicional sobre una tercera PR o confirmación de que solo existen 2 PRs en el proyecto.
+**Pull Request 3 - feature/etapa3-despliegue-testing (En Progreso)**
+- **Estado**: Commits pendientes de merge
+- **Fecha**: 30 de enero de 2026
+- **Commits incluidos**:
+  - `99f6f9f` - feat: Add Docker Compose deployment infrastructure with dedicated configurations for development and production environments
+  - `e31319c` - Refactor frontend development setup in Docker Compose, update backend port and API response field, and remove Docker Compose version specification
+  - `603d7ea` - test: Add E2E tests for expense management and dashboard features; fix UI rendering and improve data handling in dashboard components
+- **Descripción**: Esta PR (en progreso) implementa la infraestructura de despliegue y mejora las pruebas E2E, incluyendo:
+  - Infraestructura completa de Docker Compose con configuraciones separadas para desarrollo y producción
+  - Dockerfiles para backend (Python 3.13-slim) y frontend (multi-stage build con Nginx)
+  - Configuración de Nginx para desarrollo y producción con SSL/TLS
+  - Scripts de despliegue ([`deploy.sh`](deploy.sh:1)) y Makefile para automatización
+  - Documentación completa de despliegue en [`deploy/README.md`](deploy/README.md:1)
+  - Mejoras en pruebas E2E:
+    - Nuevas pruebas para configuración de tope mensual en [`dashboard.spec.js`](frontend/tests/e2e/dashboard.spec.js:1)
+    - Nuevas pruebas para registro de gastos en lenguaje natural en [`expenses.spec.js`](frontend/tests/e2e/expenses.spec.js:1)
+  - Correcciones de UI en componentes de dashboard:
+    - Mejoras en [`BudgetProgress.jsx`](frontend/src/components/BudgetProgress.jsx:1)
+    - Mejoras en [`DashboardView.jsx`](frontend/src/components/DashboardView.jsx:1)
+    - Mejoras en [`ExpenseChart.jsx`](frontend/src/components/ExpenseChart.jsx:1)
+  - Actualización de configuración de Vite para desarrollo en Docker
+  - Actualización de scripts de verificación de backend
 
