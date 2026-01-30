@@ -42,7 +42,7 @@ const DashboardView = () => {
             totalSpent: result.totalSpent,
             monthlyLimit: result.monthlyLimit,
             alert: result.alert || prev.alert,
-            expenses: [result.expense, ...prev.expenses]
+            expenses: result.expenses // Use the full list returned by backend
         }));
     };
 
@@ -61,7 +61,7 @@ const DashboardView = () => {
     };
 
     const remaining = dashboardData.monthlyLimit ? dashboardData.monthlyLimit - dashboardData.totalSpent : 0;
-    const savingsRate = dashboardData.monthlyLimit ? ((dashboardData.monthlyLimit - dashboardData.totalSpent) / dashboardData.monthlyLimit) * 100 : 0;
+    const savingsRate = dashboardData.monthlyLimit > 0 ? ((dashboardData.monthlyLimit - dashboardData.totalSpent) / dashboardData.monthlyLimit) * 100 : 0;
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('es-CO', {
@@ -130,8 +130,8 @@ const DashboardView = () => {
                     />
                     <StatCard
                         title="Presupuesto"
-                        value={dashboardData.monthlyLimit ? formatCurrency(dashboardData.monthlyLimit) : 'No definido'}
-                        subValue={dashboardData.monthlyLimit ? 'Límite mensual' : <span className="text-orange-500">Definir ahora ↓</span>}
+                        value={dashboardData.monthlyLimit > 0 ? formatCurrency(dashboardData.monthlyLimit) : 'No definido'}
+                        subValue={dashboardData.monthlyLimit > 0 ? 'Límite mensual' : <span className="text-orange-500">Definir ahora ↓</span>}
                         icon={Wallet}
                         color="primary"
                     />

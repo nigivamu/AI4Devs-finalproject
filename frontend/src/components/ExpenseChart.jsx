@@ -11,7 +11,7 @@ const ExpenseChart = ({ expenses }) => {
             if (!acc[date]) {
                 acc[date] = 0;
             }
-            acc[date] += expense.amount;
+            acc[date] += Number(expense.amount);
             return acc;
         }, {});
 
@@ -60,7 +60,7 @@ const ExpenseChart = ({ expenses }) => {
     return (
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <h3 className="text-gray-700 font-bold mb-6">Evolución de Gastos (Últimos días)</h3>
-            <div className="h-64 w-full">
+            <div className="h-64 w-full" style={{ minHeight: '1px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
