@@ -12,6 +12,16 @@ class Settings(BaseSettings):
     # AI
     OPENAI_API_KEY: str = ""
 
-    model_config = SettingsConfigDict(env_file=".env")
+    # Database
+    DATABASE_URL: str = "sqlite:///./sql_app.db"
+
+    # Security
+    ALGORITHM: str = "HS256"
+
+    # Environment
+    ENVIRONMENT: str = "development"
+    DEBUG: bool = True
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

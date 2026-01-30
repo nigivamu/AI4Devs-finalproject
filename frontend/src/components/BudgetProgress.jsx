@@ -43,7 +43,7 @@ const BudgetProgress = ({ totalSpent, monthlyLimit }) => {
             <h3 className="text-gray-700 font-bold mb-4">Progreso del Mes</h3>
 
             <div className="flex flex-col md:flex-row items-center justify-between">
-                <div className="relative w-40 h-40">
+                <div className="relative w-40 h-40" style={{ minHeight: '160px', minWidth: '160px' }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
