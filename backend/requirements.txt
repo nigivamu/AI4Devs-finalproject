@@ -5,8 +5,15 @@ pydantic
 pydantic-settings
 python-jose[cryptography]
 passlib[bcrypt]
+argon2-cffi
 python-multipart
 python-dotenv
 # For AI integration
 openai
 email-validator
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+requests

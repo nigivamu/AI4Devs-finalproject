@@ -1,7 +1,7 @@
 import requests
 import sys
 
-BASE_URL = "http://localhost:8080/api/v1"
+BASE_URL = "http://localhost:8000/api/v1"
 EMAIL = "testuser@example.com"
 PASSWORD = "password123"
 
@@ -41,7 +41,7 @@ def run_test():
     else:
         data = response.json()
         print(f"   Success: Expense registered.")
-        print(f"   Total Spent: {data['total_spent']}")
+        print(f"   Total Spent: {data['totalSpent']}")
         print(f"   Alert: {data['alert']}")
 
     print("\n5. Checking Dashboard...")
