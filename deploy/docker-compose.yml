@@ -4,8 +4,8 @@ services:
       context: ..
       dockerfile: deploy/Dockerfile.backend
     container_name: expense-tracker-backend
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     env_file:
       - ../backend/.env
     environment:
@@ -31,9 +31,9 @@ services:
     volumes:
       - ../frontend:/app
       - /app/node_modules
-    ports:
-      - "3000:3000"
-    command: sh -c "npm install && npm run dev"
+    # ports:  <-- Removed public port exposure
+    #   - "3000:3000"
+    command: sh -c "npm install && npm run dev -- --host"
     depends_on:
       backend:
         condition: service_healthy
@@ -46,6 +46,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    container_name: expense-tracker-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - expense-tracker-network
+    restart: unless-stopped
 
 networks:
   expense-tracker-network:
